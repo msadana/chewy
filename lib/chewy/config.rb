@@ -148,7 +148,15 @@ module Chewy
           if File.exist?(file)
             yaml = ERB.new(File.read(file)).result
             hash = YAML.load(yaml) # rubocop:disable Security/YAMLLoad
-            hash[Rails.env].try(:deep_symbolize_keys) if hash
+            if hash
+              # override default strategy by passing desired value in config param
+              strategy_config = hash.dig(Rails.env, 'request_strategy')
+              @request_strategy = strategy_config.to_sym if strategy_config.present?
+              # override callback strategy by passing desired value in config param
+              callback = hash.dig(Rails.env, 'use_after_commit_callbacks')
+              @use_after_commit_callbacks = callback if [true, false].include? callback
+              hash[Rails.env].try(:deep_symbolize_keys)
+            end
           end
         end || {}
       end
